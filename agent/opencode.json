@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "name": "Ollama",
+      "npm": "@ai-sdk/openai-compatible",
+      "models": {
+        "qwen3-coder": {
+          "name": "Qwen3 Coder"
+        }
+      },
+      "options": {
+        "baseURL": "{env:OLLAMA_BASE_URL}"
+      }
+    }
+  }
+}

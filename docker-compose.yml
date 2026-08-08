@@ -1,0 +1,124 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: secure-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - db-net
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: secure-backend
+    user: "${UID:-1000}:${GID:-1000}"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - app-net
+      - db-net
+
+  frontend:
+    build:
+      context: ./frontend
+      target: build
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: secure-frontend
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+    command: npm run dev
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  opencode-agent:
+    build:
+      context: ./agent
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: secure-agent
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /workspace
+    volumes:
+      # Агент видит ТОЛЬКО исходники, НЕ секреты
+      - ./backend/app:/workspace/backend/app
+      - ./frontend/src:/workspace/frontend/src
+      # Конфиг opencode (модель + провайдер Ollama)
+      - ./agent/opencode.json:/workspace/opencode.json
+      # Инструкции для агента
+      - ./AGENTS.md:/workspace/AGENTS.md
+      # Персистентные данные opencode (сессии, выбранная модель, /connect ключи)
+      # Bind-монтаж в проект: данные на хосте, не сносятся `down -v`, легко бэкапить
+      - ./agent/data/opencode:/home/agent/.local/share/opencode
+      - ./agent/data/config:/home/agent/.config/opencode
+      # Состояние opencode — здесь лежит model.json с последней выбранной моделью
+      - ./agent/data/state:/home/agent/.local/state/opencode
+      # Кэш opencode (каталог моделей, LSP-бинарники) — регенерируемый, но экономим пере-скачивание
+      - ./agent/data/cache:/home/agent/.cache/opencode
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+    networks:
+      - app-net
+    stdin_open: true  # -i
+    tty: true         # -t
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    restart: no
+
+networks:
+  app-net:
+  db-net:
+    internal: true
+
+volumes:
+  postgres_data:
