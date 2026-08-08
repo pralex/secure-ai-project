@@ -44,7 +44,7 @@ fi
 # === ПРОВЕРКА ПРАВ ДОСТУПА ===
 NEED_CHOWN=false
 
-for dir in ./backend ./frontend; do
+for dir in ./backend ./frontend ./agent/data; do
     if [ -d "$dir" ]; then
         DIR_UID=$(stat -c '%u' "$dir")
         DIR_GID=$(stat -c '%g' "$dir")
@@ -58,7 +58,7 @@ done
 
 if [ "$NEED_CHOWN" = true ]; then
     echo -e "${YELLOW}📁 Исправление прав доступа (требуется sudo)...${NC}"
-    sudo chown -R $CURRENT_UID:$CURRENT_GID ./backend ./frontend
+    sudo chown -R $CURRENT_UID:$CURRENT_GID ./backend ./frontend ./agent/data
     echo -e "${GREEN}✅ Права исправлены${NC}"
 else
     echo -e "${GREEN}✅ Права доступа уже корректны${NC}"
