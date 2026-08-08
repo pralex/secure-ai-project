@@ -35,6 +35,16 @@
    - TypeScript: корректность типов и JSX.
 6. Не ломай существующие эндпоинты `/` и `/health`.
 
+## Сеть и доступ к сервисам
+
+Ты находишься в Docker-сети проекта (`app-net`) вместе с backend и frontend. Обращаться к ним можно **по имени сервиса** (не `localhost` — порты на хосте опубликованы только на loopback):
+
+- Backend: `http://backend:8000` (эндпоинты `/` и `/health`)
+- Frontend: `http://frontend:5173` (Vite dev-сервер)
+- Через frontend к backend: `http://frontend:5173/api/...` (прокси Vite)
+
+Пример проверки доступности: `curl http://backend:8000/health`. Не ходи на `localhost:8000`/`127.0.0.1:8000` — из контейнера это не сработает.
+
 ## Типовые задачи
 
 - Добавить эндпоинт → новый роут в `backend/app/main.py`.
