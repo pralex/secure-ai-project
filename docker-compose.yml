@@ -93,8 +93,6 @@ services:
       # Кэш opencode (каталог моделей, LSP-бинарники) — регенерируемый, но экономим пере-скачивание
       - ./agent/data/cache:/home/agent/.cache/opencode
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
     networks:
       - app-net
