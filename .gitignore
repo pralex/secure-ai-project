@@ -27,8 +27,13 @@ dist/
 # Docker volumes (если локальные)
 postgres_data/
 
-# Данные агента (БД opencode, /connect ключи) — на хосте, но не в git
-agent/data/
+# Данные агента (БД opencode, /connect ключи) — на хосте, но не в git.
+# Отслеживаем только заглушки .gitkeep, чтобы каталоги существовали в клонах
+# и Docker не создавал их root-owned (иначе агент не может писать).
+agent/data/*
+agent/data/**/*
+!agent/data/**/.gitkeep
+!agent/data/**/
 
 # Logs
 *.log
