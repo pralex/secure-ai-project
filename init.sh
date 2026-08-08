@@ -64,6 +64,10 @@ else
     echo -e "${GREEN}✅ Права доступа уже корректны${NC}"
 fi
 
+# Готовим каталоги данных агента: Docker сам создаст их как root,
+# и тогда агент (uid 1000) не сможет туда писать (EACCES)
+mkdir -p agent/data/opencode agent/data/config agent/data/state agent/data/cache
+
 # Останавливаем старые контейнеры
 echo -e "${GREEN}🛑 Остановка старых контейнеров...${NC}"
 docker compose down --remove-orphans 2>/dev/null || true

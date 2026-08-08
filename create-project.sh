@@ -56,12 +56,8 @@ echo "Создание проекта '$NAME' в '$TARGET' из $SOURCE_DIR ..."
 mkdir -p "$TARGET"
 git -C "$SOURCE_DIR" archive HEAD | tar -x -C "$TARGET"
 
-# Переименовываем container_name (secure-db -> <name>-db и т.д.),
-# чтобы копии проектов не конфликтовали на одной машине.
-COMPOSE="$TARGET/docker-compose.yml"
-if [ -f "$COMPOSE" ]; then
-    sed -i "s/container_name: secure-/container_name: ${NAME}-/g" "$COMPOSE"
-fi
+# Контейнеры именуются Docker'ом автоматически по имени папки проекта,
+# поэтому конфликтов между копиями нет — ничего переименовывать не нужно.
 
 # Обновляем заголовок AGENTS.md
 AGENTS="$TARGET/AGENTS.md"
